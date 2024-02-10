@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 import yfinance as yf
-import datetime
+from datetime import datetime, timedelta
+
 
 def options_chain(symbol):
 
     tk = yf.Ticker(symbol)
-    # Expiration dates
     exps = tk.options
 
     # Initialize an empty list to hold individual option DataFrames
@@ -44,4 +44,21 @@ def options_history(symbol, interval, start, end):
     tk = yf.Ticker(symbol)
     return tk.history(interval=interval, start=start, end=end)
 
-print(options_history("RIO", "1d", "2024-01-09", "2024-02-09"))
+def options_histOpt(symbol):
+    ticker_symbol = symbol
+    expiration_date = '2024-02-16'
+
+    options_data = yf.Ticker(ticker_symbol).option_chain(expiration_date)
+
+    call_options = options_data.calls
+    put_options = options_data.puts
+
+    print("Call Options:")
+    print(call_options.head())
+
+    print("\nPut Options:")
+    print(put_options.head())
+
+# print(options_history("RIO", "1d", "2024-01-09", "2024-02-09"))
+# print(options_chain("GOOG"))
+print(options_histOpt("GOOG"))
