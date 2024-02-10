@@ -9,7 +9,7 @@ import numpy as np
 with open('datasetTEST.json', 'r') as f:
     data = json.load(f)
 
-def model(window):
+def model(window=29):
     # Prepare the data
     strike_values = [row['strike'] for row in data]
     mark_values = [row['mark'] for row in data]
@@ -39,17 +39,17 @@ def model(window):
 
     # Make predictions on the test set
     predictions = clf.predict(X_test_imputed)
-
+    # print(predictions)
     # Evaluate the model
     accuracy = accuracy_score(y_test, predictions)
     # print("Accuracy:", accuracy)
-    return accuracy
+    return predictions, y_test, accuracy
 
 vals = np.zeros((100,))
 maxVal = -1
 index = 0
 for i in range(100):
-    vals[i] = model(i)
+    vals[i] = model(i)[2]
     if vals[i] > maxVal:
         maxVal = vals[i]
         index = i
