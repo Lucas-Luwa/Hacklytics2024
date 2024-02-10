@@ -1,6 +1,15 @@
 from scipy.stats import norm
 import math
 from datetime import datetime
+import yfinance as yf
+
+# Inputs
+#type -> Call or Put  
+#S -> Current stock price
+#K -> Strike price
+#t ->  Time to expiration in years (Alternatively, provide 2 dates)
+#r -> Risk-free interest rate
+#sigma -> Volatility
 
 def blackScholes(optType, S, K, time1, time2, r, sigma, flag):
     if flag == 0:
@@ -39,11 +48,11 @@ def blackScholes(optType, S, K, time1, time2, r, sigma, flag):
 #sigma -> Volatility
 
 #Testing
-type = 'Put'
+type = 'Call'
 #With a decimal value
-optPrem = round(blackScholes(type, 80, 105, 0.41, 0, 0.05, 0.3, 0), 3)
+optPrem = round(blackScholes(type, 180.06, 210, 0.41, 0, 0.03, 0.3, 0), 3)
 #Given two dates
-optPrem2 = round(blackScholes(type, 80, 105, '2022-01-01', '2022-06-01',  0.05, 0.3, 1), 3)
+optPrem2 = round(blackScholes(type, 150.86, 105, '2023-01-02', '2023-01-20',  0.03, .3132,  1), 3)
 
 print(f"{type} option premium: {optPrem}")
 print(f"{type} option premium: {optPrem2}")

@@ -31,7 +31,7 @@ def get_full_dataset(output_file):
 
     print("Dataset saved to", output_file)
 
-output_file = 'dataset.json'
+output_file = 'datasetTEST.json'
 get_full_dataset(output_file)
 
 # {'date': '2023-01-02', 'act_symbol': 'ABG', 'expiration': '2023-01-20', 'strike': '210.00', 

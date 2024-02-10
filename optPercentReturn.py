@@ -1,7 +1,11 @@
 import math
 
+#Activation Functions if needed for rescaling percent returns
 def sigmoid(x):
     return float(1/(1 + math.exp(-x)))
+
+def hyperbolicTan(x):
+    return float(2/(1 + math.exp(-2 * x) - 1))
 
 def calcPercentReturn(type, strike, closingPrice, premium):
     if type == 'Call':
