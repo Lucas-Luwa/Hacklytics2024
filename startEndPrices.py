@@ -22,6 +22,6 @@ def getOpenClosePrice(symbol, startDate, endDate):
     return openPrice, closePrice, startDate, endDate
 
 #Testing
-information = getOpenClosePrice("AAPL", "2023-01-01", "2023-6-30")
-print(f"Starting Price on {information[2]}: ${information[0]}")
-print(f"Ending Price on {information[3]}: ${information[1]}")
+# information = getOpenClosePrice("AAPL", "2023-01-01", "2023-6-30")
+# print(f"Starting Price on {information[2]}: ${information[0]}")
+# print(f"Ending Price on {information[3]}: ${information[1]}")
