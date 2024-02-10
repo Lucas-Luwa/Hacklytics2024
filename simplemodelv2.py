@@ -18,7 +18,9 @@ def model(window):
     delta = [row['delta'] for row in data]
     gamma = [row['gamma'] for row in data]
     theta = [row['theta'] for row in data]
-    # vega = [row['vega'] for row in data]
+    vega = [row['vega'] for row in data]
+
+    print(len(vega), len(theta), len(gamma), len(delta), len(moving_average_10), len(mark_values), len(strike_values))
 
     features = list(zip(strike_values, mark_values, moving_average_10, delta))
     target = [1 if row['percent_return'] > 0 else 0 for row in data]
