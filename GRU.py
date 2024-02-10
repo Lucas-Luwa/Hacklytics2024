@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import json
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import GRU, Dense
 
 # Load data from the JSON file
 with open('datasetTEST.json', 'r') as f:
@@ -39,15 +39,17 @@ xTrainReshaped = xTrainScaled.reshape((xTrainScaled.shape[0], 1, xTrainScaled.sh
 xTestReshaped = xTestScaled.reshape((xTestScaled.shape[0], 1, xTestScaled.shape[1]))
 
 model = Sequential()
-model.add(LSTM(50, input_shape=(xTrainReshaped.shape[1], xTrainReshaped.shape[2]), return_sequences=True))
-model.add(LSTM(40))
-model.add(Dense(64, activation='relu'))
-model.add(Dense(1, activation='sigmoid'))
+# model.add(GRU(50, input_shape=(xTrainReshaped.shape[1], xTrainReshaped.shape[2])))
+
+model.add(GRU(50, input_shape=(xTrainReshaped.shape[1], xTrainReshaped.shape[2]), return_sequences=True))
+model.add(GRU(50))
+# model.add(Dense(32, activation='relu'))
+model.add(Dense(1, activation='relu'))
 
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 # Train
-model.fit(xTrainReshaped, y_train, epochs=25, batch_size=20, validation_split=0.2)
+model.fit(xTrainReshaped, y_train, epochs=30, batch_size=16, validation_split=0.2)
 
 # Evaluate
 yPredProbability = model.predict(xTestReshaped)
