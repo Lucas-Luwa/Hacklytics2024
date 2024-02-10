@@ -121,6 +121,6 @@ def options_histOpt(symbol):
 
 # print(options_history("RIO", "1d", "2024-01-09", "2024-02-09"))
 # print(options_chain("GOOG"))
-print(options_histOpt("GOOG"))
-options_chain("TSLA")
+# print(options_histOpt("GOOG"))
+# options_chain("TSLA")
 
