@@ -3,24 +3,38 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
+import matplotlib.pyplot as plt
 
-df = pd.read_csv("apple_stock_options.csv")
-df_np = df.to_numpy()[:, 1:6]
+df = pd.read_json("dataset.json")
+df_np = df.to_numpy()
+strikes = df_np[:, 3]
+call_put = np.array(pd.factorize(df_np[:, 4])[0].tolist())
+bid = df_np[:, 5]
+ask = df_np[:, 6]
+vol = df_np[:, 7]
+delta = df_np[:, 8]
+gamma = df_np[:, 9]
+theta = df_np[:, 10]
+vega = df_np[:, 11]
+rho = df_np[:, 12]
+open_price = df_np[:, 13]
+history = df_np[:, 14]
+percent_return = df_np[:, 15]
+# #X should be (# of points, # of features)
+X_np = np.array([strikes, call_put, bid, ask, vol, delta, gamma, theta, vega, rho, open_price]).T
+# X_np = np.array([vega, rho, open_price]).T
+y_np = rho
 
-#X should be (# of points, # of features)
-X_np = np.array([df_np[:, 0], df_np[:, 1], df_np[:, 2], df_np[:, 4]]).T
-y_np = df_np[:, 3]
-
-X_train_np = X_np[:2000]
+X_train_np = X_np[:700]
 X_train_np = X_train_np.astype("float64")
 
-y_train_np = y_np[:2000]
+y_train_np = y_np[:700]
 y_train_np = y_train_np.astype("float64")
 
-X_test_np = X_np[2000:]
+X_test_np = X_np[700:]
 X_test_np = X_test_np.astype("float64")
 
-y_test_np = y_np[2000:]
+y_test_np = y_np[700:]
 y_test_np = y_test_np.astype("float64")
 
 train_dataset = TensorDataset(torch.tensor(X_train_np, dtype=torch.float),
@@ -32,74 +46,96 @@ test_dataloader = DataLoader(test_dataset, batch_size=128)
 class MLP1(nn.Module):
     def __init__(self):
         super(MLP1, self).__init__()
-        self.hidden_layer_1 = nn.Linear(4, 400)
-        self.hidden_1_activation = nn.LeakyReLU()
 
-        self.hidden_layer_2 = nn.Linear(400, 400)
-        self.hidden_2_activation = nn.LeakyReLU()
-
-        self.hidden_layer_3 = nn.Linear(400, 400)
-        self.hidden_3_activation = nn.LeakyReLU()
-
-        self.out = nn.Linear(400, 1)
-        self.out_activation = nn.ReLU()
+		# initialize first (and only) set of FC => RELU layers
+        self.fc1 = nn.Linear(in_features=11, out_features=500)
+        self.sigmoid1 = nn.Sigmoid()
+		# initialize our softmax classifier
+        self.fc2 = nn.Linear(in_features=500, out_features=1)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
-        x = self.hidden_layer_1(x)
-        x = self.hidden_1_activation(x)
-        x = self.hidden_layer_2(x)
-        x = self.hidden_2_activation(x)
-        x = self.hidden_layer_3(x)
-        x = self.hidden_3_activation(x)
-        x = self.out(x)
-        x = self.out_activation(x)
-        return x
+        x = self.fc1(x)
+        x = self.sigmoid1(x)
+        # pass the output to our softmax classifier to get our output
+        # predictions
+        x = self.fc2(x)
+        output = self.softmax(x)
+        # return the output predictions
+        return output
 
-device = "cpu"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = MLP1().to(device)
 print(model)
 
-loss_fn = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 
 def train(dataloader, model, loss_fn, optimizer):
     model.train()
-    train_loss = 0
 
-    for i, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
-
-        y_hat = model(X)
-        mse = loss_fn(y_hat, y)
-        train_loss += mse.item()
-
-        optimizer.zero_grad()
-        mse.backward()
-        optimizer.step()
+    totalTrainLoss = 0
     
-    num_batches = len(dataloader)
-    train_mse = train_loss / num_batches
-    print(f'Train RMSE: {train_mse**(1/2)}')
+    # initialize the number of correct predictions in the training
+    # and validation step
+    trainCorrect = 0
+    
+    # loop over the training set
+    for (x, y) in train_dataloader:
+        # send the input to the device
+        (x, y) = (x.to(device), y.to(device))
+        # perform a forward pass and calculate the training loss
+        pred = model(x)
+        loss = loss_fn(pred, y)
+        # zero out the gradients, perform the backpropagation step,
+        # and update the weights
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        # add the loss to the total training loss so far and
+        # calculate the number of correct predictions
+        totalTrainLoss += loss
+        trainCorrect += (pred.argmax(1) == y).type(
+            torch.float).sum().item()
+    return totalTrainLoss, trainCorrect
 
 def test(dataloader, model, loss_fn):
-    model.eval()
-    test_loss = 0
-
+    totalValLoss = 0
+    valCorrect = 0
     with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            y_hat = model(X)
-            test_loss += loss_fn(y_hat, y).item()
-    
-    num_batches = len(dataloader)
-    test_mse = test_loss / num_batches
-
-    print(f'Test RMSE: {test_mse**(1/2)}\n')
+    # set the model in evaluation mode
+        model.eval()
+        # loop over the validation set
+        for (x, y) in test_dataloader:
+            # send the input to the device
+            (x, y) = (x.to(device), y.to(device))
+            # make the predictions and calculate the validation loss
+            pred = model(x)
+            totalValLoss += loss_fn(pred, y)
+            # calculate the number of correct predictions
+            valCorrect += (pred.argmax(1) == y).type(
+                torch.float).sum().item()
+    return totalValLoss, valCorrect
 
 epochs = 10
-
+H = {
+	"train_loss": [],
+	"train_acc": [],
+	"val_loss": [],
+	"val_acc": []
+}
 for epoch in range(epochs):
-    print(f"Epoch {epoch+1}:")
-    train(train_dataloader, model, loss_fn, optimizer)
-    test(test_dataloader, model, loss_fn)
-
+    totalTrainLoss, trainCorrect = train(train_dataloader, model, loss_fn, optimizer)
+    totalValLoss, valCorrect = test(test_dataloader, model, loss_fn)
+    # calculate the training and validation accuracy
+    trainCorrect = trainCorrect / len(train_dataloader.dataset)
+    valCorrect = valCorrect / len(test_dataloader.dataset)
+    # update our training history
+    # H["train_loss"].append(avgTrainLoss.cpu().detach().numpy())
+    H["train_acc"].append(trainCorrect)
+    # H["val_loss"].append(avgValLoss.cpu().detach().numpy())
+    H["val_acc"].append(valCorrect)
+    # print the model training and validation information
+    print("[INFO] EPOCH: {}/{}".format(epoch + 1, epochs))
+    print("Train accuracy: {:.4f}".format(trainCorrect))
+    print("Val accuracy: {:.4f}\n".format( valCorrect))
