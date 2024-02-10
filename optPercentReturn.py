@@ -15,4 +15,4 @@ def calcPercentReturn(type, strike, closingPrice, premium):
     return percent
 
 #Testing
-print(calcPercentReturn('Call', 2, 5, 1))
+# print(calcPercentReturn('Call', 2, 5, 1))
