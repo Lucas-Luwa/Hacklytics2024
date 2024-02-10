@@ -39,4 +39,9 @@ def options_chain(symbol):
 
     return options
 
-print(options_chain("TSLA"))
+def options_history(symbol, interval, start, end):
+
+    tk = yf.Ticker(symbol)
+    return tk.history(interval=interval, start=start, end=end)
+
+print(options_history("RIO", "1d", "2024-01-09", "2024-02-09"))
